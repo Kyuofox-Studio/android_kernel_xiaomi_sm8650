@@ -486,4 +486,6 @@ config MSM_SMD_PKT
          usersapce clients to read and write to some smd packets channel
          for MSM chipset.
 
+source "drivers/char/lrng/Kconfig"
+
 endmenu
