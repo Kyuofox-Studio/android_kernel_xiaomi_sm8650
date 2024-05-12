@@ -177,3 +177,12 @@ sphinx_*/
 # Android ABI build files
 abi_gki_protected_exports
 all_kmi_symbols
+
+# Build script
+kyuofox_build.sh
+
+# Build log
+kernel.log
+
+# Output dir
+out
