@@ -1,0 +1,18 @@
+# Xiaomi configuration options
+
+config MACH_XIAOMI_SM8650
+	bool "Xiaomi SM8650"
+	depends on ARCH_QCOM
+	depends on ARCH_PINEAPPLE
+	help
+	  Support for SM8650 Xiaomi variants
+
+menu "Xiaomi board selection"
+
+	config MACH_XIAOMI_SHENNONG
+		bool "Xiaomi 14 Pro board"
+		depends on MACH_XIAOMI_SM8650
+		help
+		  Support for Xiaomi 14 Pro variant
+
+endmenu
