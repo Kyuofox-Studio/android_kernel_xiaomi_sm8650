@@ -89,6 +89,15 @@ config CC_HAS_ASM_GOTO_TIED_OUTPUT
 	# Detect buggy gcc and clang, fixed in gcc-11 clang-14.
 	def_bool $(success,echo 'int foo(int *x) { asm goto (".long (%l[bar]) - .": "+m"(*x) ::: bar); return *x; bar: return 0; }' | $CC -x c - -c -o /dev/null)
 
+config GCC_ASM_GOTO_OUTPUT_WORKAROUND
+	bool
+	depends on CC_IS_GCC && CC_HAS_ASM_GOTO_OUTPUT
+	# Fixed in GCC 14, 13.3, 12.4 and 11.5
+	# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=113921
+	default y if GCC_VERSION < 110500
+	default y if GCC_VERSION >= 120000 && GCC_VERSION < 120400
+	default y if GCC_VERSION >= 130000 && GCC_VERSION < 130300
+
 config TOOLS_SUPPORT_RELR
 	def_bool $(success,env "CC=$(CC)" "LD=$(LD)" "NM=$(NM)" "OBJCOPY=$(OBJCOPY)" $(srctree)/scripts/tools-support-relr.sh)
 
@@ -595,6 +604,26 @@ config TASKSTATS
 
 	  Say N if unsure.
 
+config MSM_SYSSTATS
+	tristate "Export system/task statistics through netlink"
+	depends on NET
+	depends on MULTIUSER
+	help
+	  Export system and task statistics through generic netlink
+	  interface. Userspace can retrieve these statistics via netlink
+	  socket.
+	  If unsure, say N
+
+config MSM_SYSSTATS_STUB_NONEXPORTED_SYMBOLS
+	bool "Stub out non-exported core-kernel symbols"
+	depends on MSM_SYSSTATS
+	help
+	  Stub out is_system_dmabufheap(), vmalloc_nr_pages() and si_swapinfo().
+	  Enabling this option will make the swap_used, swap_total and
+	  vmalloc_total fields of struct sysstats_mem 0, and will make the
+	  unreclaimable field either 0, or make it only include the KGSL memory.
+	  If unsure, say N.
+
 config TASK_DELAY_ACCT
 	bool "Enable per-task delay accounting"
 	depends on TASKSTATS
@@ -893,14 +922,14 @@ config CC_IMPLICIT_FALLTHROUGH
 	default "-Wimplicit-fallthrough=5" if CC_IS_GCC && $(cc-option,-Wimplicit-fallthrough=5)
 	default "-Wimplicit-fallthrough" if CC_IS_CLANG && $(cc-option,-Wunreachable-code-fallthrough)
 
-# Currently, disable gcc-11+ array-bounds globally.
+# Currently, disable gcc-10+ array-bounds globally.
 # It's still broken in gcc-13, so no upper bound yet.
-config GCC11_NO_ARRAY_BOUNDS
+config GCC10_NO_ARRAY_BOUNDS
 	def_bool y
 
 config CC_NO_ARRAY_BOUNDS
 	bool
-	default y if CC_IS_GCC && GCC_VERSION >= 110000 && GCC11_NO_ARRAY_BOUNDS
+	default y if CC_IS_GCC && GCC_VERSION >= 100000 && GCC10_NO_ARRAY_BOUNDS
 
 #
 # For architectures that know their GCC __int128 support is sound
@@ -1921,11 +1950,11 @@ config RUST
 	bool "Rust support"
 	depends on HAVE_RUST
 	depends on RUST_IS_AVAILABLE
+	depends on !CFI_CLANG
 	depends on !MODVERSIONS
 	depends on !GCC_PLUGINS
 	depends on !RANDSTRUCT
 	depends on !DEBUG_INFO_BTF || PAHOLE_HAS_LANG_EXCLUDE
-	select CONSTRUCTORS
 	help
 	  Enables Rust support in the kernel.
 
@@ -2020,3 +2049,4 @@ config ARCH_HAS_SYSCALL_WRAPPER
 	def_bool n
 
 source "init/Kconfig.gki"
+source "init/Kconfig.gki-debug"

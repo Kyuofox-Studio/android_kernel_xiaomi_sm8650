@@ -101,6 +101,7 @@ filegroup(
         # keep sorted
         "android/abi_gki_aarch64_asr",
         "android/abi_gki_aarch64_asus",
+        "android/abi_gki_aarch64_bcmstb",
         "android/abi_gki_aarch64_db845c",
         "android/abi_gki_aarch64_exynos",
         "android/abi_gki_aarch64_exynosauto",
@@ -119,6 +120,9 @@ filegroup(
         "android/abi_gki_aarch64_qcom",
         "android/abi_gki_aarch64_rockchip",
         "android/abi_gki_aarch64_sony",
+        "android/abi_gki_aarch64_sunxi",
+        "android/abi_gki_aarch64_telechips",
+        "android/abi_gki_aarch64_transsion",
         "android/abi_gki_aarch64_tuxera",
         "android/abi_gki_aarch64_type_visibility",
         "android/abi_gki_aarch64_unisoc",
@@ -134,6 +138,7 @@ define_common_kernels(target_configs = {
         "kmi_symbol_list_strict_mode": True,
         "module_implicit_outs": get_gki_modules_list("arm64"),
         "kmi_symbol_list": "android/abi_gki_aarch64",
+        "rewrite_absolute_paths_in_config": True,
         "kmi_symbol_list_add_only": True,
         "additional_kmi_symbol_lists": [":aarch64_additional_kmi_symbol_lists"],
         "protected_exports_list": "android/abi_gki_protected_exports_aarch64",
@@ -149,6 +154,7 @@ define_common_kernels(target_configs = {
         "kmi_symbol_list_strict_mode": False,
         "module_implicit_outs": get_gki_modules_list("arm64"),
         "kmi_symbol_list": "android/abi_gki_aarch64",
+        "rewrite_absolute_paths_in_config": True,
         "kmi_symbol_list_add_only": True,
         "additional_kmi_symbol_lists": [":aarch64_additional_kmi_symbol_lists"],
         "protected_exports_list": "android/abi_gki_protected_exports_aarch64",
@@ -361,6 +367,7 @@ _DB845C_MODULE_OUTS = [
     "drivers/mfd/qcom-spmi-pmic.ko",
     "drivers/mfd/wcd934x.ko",
     "drivers/misc/fastrpc.ko",
+    "drivers/misc/kxrctrl/aphost.ko",
     "drivers/mmc/host/cqhci.ko",
     "drivers/mmc/host/sdhci-msm.ko",
     "drivers/net/can/spi/mcp251xfd/mcp251xfd.ko",
@@ -512,6 +519,14 @@ kernel_build(
     strip_modules = True,
 )
 
+load(":consolidate.bzl", "define_consolidate")
+
+define_consolidate()
+
+load(":msm_platforms.bzl", "define_msm_platforms")
+
+define_msm_platforms()
+
 kernel_build(
     name = "db845c_with_kgdb",
     outs = [
@@ -586,6 +601,7 @@ _ROCKPI4_MODULE_OUTS = [
     "drivers/char/hw_random/virtio-rng.ko",
     "drivers/clk/clk-rk808.ko",
     "drivers/cpufreq/cpufreq-dt.ko",
+    "drivers/cpufreq/tegra20-cpufreq.ko",
     "drivers/dma/pl330.ko",
     "drivers/gpu/drm/bridge/analogix/analogix_dp.ko",
     "drivers/gpu/drm/bridge/synopsys/dw-hdmi.ko",
@@ -945,11 +961,15 @@ filegroup(
 ddk_headers(
     name = "all_headers_unsafe",
     hdrs = [
+        "drivers/devfreq/governor.h",
         "drivers/gpu/drm/virtio/virtgpu_trace.h",
+        "mm/slab.h",
     ],
     # The list of include directories where source files can #include headers
     # from. In other words, these are the `-I` option to the C compiler.
     # Unsafe include directories are appended to ccflags-y.
-    includes = [],
+    includes = [
+        "drivers/devfreq",
+    ],
     visibility = ["//visibility:private"],
 )

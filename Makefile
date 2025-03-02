@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0
 VERSION = 6
 PATCHLEVEL = 1
-SUBLEVEL = 75
+SUBLEVEL = 93
 EXTRAVERSION =
 NAME = Curry Ramen
 
@@ -477,8 +477,7 @@ HOSTRUSTC = rustc
 HOSTPKG_CONFIG	= pkg-config
 
 KBUILD_USERHOSTCFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes \
-			 -O2 -fomit-frame-pointer -std=gnu11 \
-			 -Wdeclaration-after-statement
+			 -O2 -fomit-frame-pointer -std=gnu11
 KBUILD_USERCFLAGS  := $(KBUILD_USERHOSTCFLAGS) $(USERCFLAGS)
 KBUILD_USERLDFLAGS := $(USERLDFLAGS)
 
@@ -1046,9 +1045,6 @@ endif
 # arch Makefile may override CC so keep this after arch Makefile is included
 NOSTDINC_FLAGS += -nostdinc
 
-# warn about C99 declaration after statement
-KBUILD_CFLAGS += -Wdeclaration-after-statement
-
 # Variable Length Arrays (VLAs) should not be used anywhere in the kernel
 KBUILD_CFLAGS += -Wvla
 
@@ -1236,6 +1232,61 @@ ifeq ($(KBUILD_EXTMOD),)
 endif
 	$(Q)$(MAKE) $(hdr-inst)=$(hdr-prefix)include/uapi
 	$(Q)$(MAKE) $(hdr-inst)=$(hdr-prefix)arch/$(SRCARCH)/include/uapi
+
+# ---------------------------------------------------------------------------
+# Devicetree files
+ifeq ($(KBUILD_EXTMOD),)
+ifneq ($(wildcard $(srctree)/arch/$(SRCARCH)/boot/dts/),)
+dtstree := arch/$(SRCARCH)/boot/dts
+endif
+
+else # KBUILD_EXTMOD
+# Devicetree source should live in $(KBUILD_EXTMOD)/arch/$(SRCARCH)/boot/dts/
+# But it may live inside some other folder relative to KBUILD_EXTMOD, as specified
+# by KBUILD_EXTMOD_DTS
+KBUILD_EXTMOD_DTS = arch/$(SRCARCH)/boot/dts
+ifneq ($(wildcard $(KBUILD_EXTMOD)/$(KBUILD_EXTMOD_DTS)/ $(srctree)/$(KBUILD_EXTMOD)/$(KBUILD_EXTMOD_DTS)/),)
+dtstree := $(KBUILD_EXTMOD)/$(KBUILD_EXTMOD_DTS)
+endif
+endif
+
+ifneq ($(dtstree),)
+
+%.dtb: include/config/kernel.release scripts_dtc
+	$(Q)$(MAKE) $(build)=$(dtstree) $(dtstree)/$@
+
+PHONY += dtbs dtbs_install dtbs_check
+dtbs: include/config/kernel.release scripts_dtc
+	$(Q)$(MAKE) $(build)=$(dtstree)
+
+ifneq ($(filter dtbs_check, $(MAKECMDGOALS)),)
+export CHECK_DTBS=y
+dtbs: dt_binding_check
+endif
+
+dtbs_check: dtbs
+
+dtbs_install:
+	$(Q)$(MAKE) $(dtbinst)=$(dtstree) dst=$(INSTALL_DTBS_PATH)
+
+ifdef CONFIG_OF_EARLY_FLATTREE
+all: dtbs
+endif
+
+endif
+
+PHONY += scripts_dtc
+scripts_dtc: scripts_basic
+	$(Q)$(MAKE) $(build)=scripts/dtc
+
+ifneq ($(filter dt_binding_check, $(MAKECMDGOALS)),)
+export CHECK_DT_BINDING=y
+endif
+
+PHONY += dt_binding_check
+dt_binding_check: scripts_dtc
+	$(Q)$(MAKE) $(build)=Documentation/devicetree/bindings
+
 
 ifeq ($(KBUILD_EXTMOD),)
 
