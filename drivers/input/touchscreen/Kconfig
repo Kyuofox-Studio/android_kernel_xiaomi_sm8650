@@ -1381,4 +1381,6 @@ config TOUCHSCREEN_ZINITIX
 
 source "drivers/input/touchscreen/xiaomi/Kconfig"
 
+source "drivers/input/touchscreen/synaptics_tcm2/Kconfig"
+
 endif
