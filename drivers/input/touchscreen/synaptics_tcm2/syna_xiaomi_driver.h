@@ -14,7 +14,7 @@
 #include <linux/debugfs.h>
 #endif
 
-#ifdef TOUCH_THP_SUPPORT
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_THP_SUPPORT
 #define HAL_ROW_NUM             18
 #define HAL_COL_NUM             40
 #define HAL_NODE_NUM            ((HAL_ROW_NUM) * (HAL_COL_NUM))
@@ -108,7 +108,7 @@ typedef struct {
 
 #endif
 
-#ifdef TOUCH_THP_SUPPORT
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_THP_SUPPORT
 /**
  * @brief: enable touch raw on/off
  *

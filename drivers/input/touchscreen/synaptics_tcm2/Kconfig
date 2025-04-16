@@ -58,4 +58,44 @@ config TOUCHSCREEN_SYNA_TCM2_ROMBOOT
 
 	  If unsure, say N.
 
+config TOUCHSCREEN_SYNA_TCM2_TRUSTED_TOUCH
+	bool "Synaptics TCM trusted touch"
+	depends on TOUCHSCREEN_SYNA_TCM2
+	help
+	  Say Y here to enable support for the trusted touch.
+
+	  If unsure, say N.
+
+config TOUCHSCREEN_SYNA_TCM2_THP_SUPPORT
+	bool "Synaptics TCM thp support"
+	depends on TOUCHSCREEN_SYNA_TCM2
+	help
+	  Say Y here to enable support for the thp.
+
+	  If unsure, say N.
+
+config TOUCHSCREEN_SYNA_TCM2_FOD_SUPPORT
+	bool "Synaptics TCM fod support"
+	depends on TOUCHSCREEN_SYNA_TCM2
+	help
+	  Say Y here to enable support for the fod.
+
+	  If unsure, say N.
+
+config TOUCHSCREEN_SYNA_TCM2_SENSORHUB_SUPPORT
+	bool "Synaptics TCM sensorhub support"
+	depends on TOUCHSCREEN_SYNA_TCM2
+	help
+	  Say Y here to enable support for the sensorhub.
+
+	  If unsure, say N.
+
+config TOUCHSCREEN_SYNA_TCM2_SPI_CS_CLK_DELAY
+	bool "Synaptics TCM spi cs clk delay support"
+	depends on TOUCHSCREEN_SYNA_TCM2
+	help
+	  Say Y here to enable support for the spi cs clk delay.
+
+	  If unsure, say N.
+
 endif

@@ -59,7 +59,7 @@ static struct spi_transfer *xfer;
 
 static struct platform_device *syna_spi_device;
 
-#ifdef TOUCH_SPI_CS_CLK_DELAY
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_SPI_CS_CLK_DELAY
 struct spi_geni_qcom_ctrl_data {
 	u32 spi_cs_clk_delay;
 	u32 spi_inter_words_delay;
@@ -663,7 +663,7 @@ static int syna_spi_read(struct syna_hw_interface *hw_if,
 	}
 
 	syna_pal_mutex_lock(&bus->io_mutex);
-/*#ifdef TOUCH_SENSORHUB_SUPPORT*/
+/*#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_SENSORHUB_SUPPORT*/
 #if 0
 	retval = pm_runtime_get_sync(spi->master->dev.parent);
 	if (retval < 0) {
@@ -756,7 +756,7 @@ static int syna_spi_read(struct syna_hw_interface *hw_if,
 
 exit:
 	pm_relax(&syna_spi_device->dev);
-/*#ifdef TOUCH_SENSORHUB_SUPPORT*/
+/*#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_SENSORHUB_SUPPORT*/
 #if 0
 	retval = pm_runtime_put_sync(spi->master->dev.parent);
 	if (retval < 0) {
@@ -808,7 +808,7 @@ static int syna_spi_write(struct syna_hw_interface *hw_if,
 		return -ENXIO;
 	}
 	syna_pal_mutex_lock(&bus->io_mutex);
-/*#ifdef TOUCH_SENSORHUB_SUPPORT*/
+/*#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_SENSORHUB_SUPPORT*/
 #if 0
 	retval = pm_runtime_get_sync(spi->master->dev.parent);
 	if (retval < 0) {
@@ -882,7 +882,7 @@ static int syna_spi_write(struct syna_hw_interface *hw_if,
 
 exit:
 	pm_relax(&syna_spi_device->dev);
-/*#ifdef TOUCH_SENSORHUB_SUPPORT*/
+/*#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_SENSORHUB_SUPPORT*/
 #if 0
 	retval = pm_runtime_put_sync(spi->master->dev.parent);
 	if (retval < 0) {
@@ -1406,7 +1406,7 @@ static int syna_spi_probe(struct spi_device *spi)
 		break;
 	}
 
-#ifdef TOUCH_SPI_CS_CLK_DELAY
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_SPI_CS_CLK_DELAY
 	spi->controller_data = &qcom_ctrl_data;
 #endif
 	/* keep the i/o device */

@@ -816,7 +816,7 @@ static irqreturn_t syna_dev_isr(int irq, void *data)
 		LOGE("Fail to get event data\n");
 		goto exit;
 	}
-#ifdef TOUCH_SENSORHUB_SUPPORT
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_SENSORHUB_SUPPORT
 	if (xiaomi_get_sensorhub_status(0) != 0) {
 		LOGE("sensorhub enabled,irq may read by sensorhub\n");
 	}
@@ -834,7 +834,7 @@ static irqreturn_t syna_dev_isr(int irq, void *data)
 #endif
 	}
 #endif
-#ifdef TOUCH_THP_SUPPORT
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_THP_SUPPORT
 	if (tcm->enable_touch_raw && (tcm->pwr_state == PWR_ON) && (code == REPORT_THP))
 		syna_tcm_report_thp_frame(tcm, irq_start_time);
 #endif
@@ -1034,7 +1034,7 @@ void syna_dev_reflash_startup(struct syna_tcm *tcm, bool force_reflash)
 	const unsigned char *fw_image = NULL;
 	unsigned int fw_image_size;
 	int i = 0, retry = 3;
-#ifdef TOUCH_SENSORHUB_SUPPORT
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_SENSORHUB_SUPPORT
 	struct spi_device *spi = (struct spi_device *)tcm->hw_if->pdev;
 #endif
 
@@ -1053,7 +1053,7 @@ void syna_dev_reflash_startup(struct syna_tcm *tcm, bool force_reflash)
 	fw_image_size = fw_entry->size;
 
 	LOGD("Firmware image size = %d\n", fw_image_size);
-#ifdef TOUCH_SENSORHUB_SUPPORT
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_SENSORHUB_SUPPORT
 	retval = pm_runtime_get_sync(spi->master->dev.parent);
 	if (retval < 0) {
 		LOGE("Fail to failed to get sync, retval = %d\n", retval);
@@ -1115,7 +1115,7 @@ exit:
 	}
 
 	pm_relax(&tcm->pdev->dev);
-#ifdef TOUCH_SENSORHUB_SUPPORT
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_SENSORHUB_SUPPORT
 	retval = pm_runtime_put_sync(spi->master->dev.parent);
 	if (retval < 0) {
 		LOGE("Fail to failed to put sync, retval = %d\n", retval);
@@ -1359,7 +1359,7 @@ static int syna_dev_resume(struct device *dev)
 		LOGE("Fail to set up app firmware on resume\n");
 		goto exit;
 	}
-#ifdef TOUCH_THP_SUPPORT
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_THP_SUPPORT
 	if (tcm->enable_touch_raw == 0)
 		syna_tcm_enable_touch_raw(0);
 #endif

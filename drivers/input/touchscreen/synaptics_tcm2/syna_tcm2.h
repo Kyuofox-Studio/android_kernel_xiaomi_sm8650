@@ -477,7 +477,7 @@ struct syna_tcm {
 	int charger_connected;
 	int report_rate_mode;
 	unsigned int gesture_type;
-#ifdef TOUCH_THP_SUPPORT
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_THP_SUPPORT
 	bool enable_touch_raw;
 #endif
 	/* for factory testing */

@@ -44,7 +44,7 @@ static hardware_param_t hardware_param;
 static struct syna_tcm *tcm = NULL;
 static void syna_set_ic_mode(enum set_ic_mode_enum mode, int *value);
 
-#ifdef CONFIG_TRUSTED_TOUCH
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_TRUSTED_TOUCH
 struct qts_vendor_data qts_vendor_data;
 #endif
 
@@ -260,7 +260,7 @@ exit:
 }
 #endif
 
-#ifdef TOUCH_FOD_SUPPORT
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_FOD_SUPPORT
 static void touch_fod_test(int value, int fod_center_x, int fod_center_y)
 {
 	struct syna_tcm *tcm_hcd = tcm;
@@ -329,11 +329,11 @@ static int syna_ic_self_test(char *type, int *result)
 			goto out;
 		}
 
-#ifdef TOUCH_THP_SUPPORT
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_THP_SUPPORT
 	syna_tcm_enable_touch_raw(0);
 #endif
 		retval = tcm_hcd->testing_xiaomi_self_test(self_test_data);
-#ifdef TOUCH_THP_SUPPORT
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_THP_SUPPORT
 	syna_tcm_enable_touch_raw(1);
 #endif
 		if (!retval) {
@@ -510,7 +510,7 @@ static char syna_tcm_touch_vendor_read(void)
 	return '5';
 }
 
-#ifdef TOUCH_THP_SUPPORT
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_THP_SUPPORT
 int syna_tcm_enable_touch_raw(int en)
 {
 	int retval;
@@ -793,7 +793,7 @@ int xiaomi_get_y_resolution(void)
 static int syna_tcm_resume_suspend(bool is_resume, u8 gesture_type)
 {
 	int result = 0;
-#ifdef  CONFIG_TRUSTED_TOUCH
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_TRUSTED_TOUCH
 	struct qts_data *qts_data = NULL;
 	qts_data = get_qts_data_helper(&qts_vendor_data);
 #endif
@@ -801,7 +801,7 @@ static int syna_tcm_resume_suspend(bool is_resume, u8 gesture_type)
 	if (tcm == NULL || tcm->tp_probe_success == 0)
 		return -1;
 	if (is_resume) {
-#ifdef  CONFIG_TRUSTED_TOUCH
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_TRUSTED_TOUCH
 		qts_ts_resume(qts_data);
 #endif
 		result = tcm->dev_resume(&tcm->pdev->dev);
@@ -809,12 +809,12 @@ static int syna_tcm_resume_suspend(bool is_resume, u8 gesture_type)
 		return result;
 	}
 
-#ifdef  CONFIG_TRUSTED_TOUCH
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_TRUSTED_TOUCH
 		qts_ts_suspend(qts_data);
 #endif
 	return tcm->dev_suspend(&tcm->pdev->dev);
 }
-#ifdef CONFIG_TRUSTED_TOUCH
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_TRUSTED_TOUCH
 static int syna_tcm_enable_touch_irq(void *data, bool enable)
 {
 	struct syna_tcm  *tcm =  (struct syna_tcm *)data;
@@ -1006,7 +1006,7 @@ exit:
 	return retval;
 }
 
-#ifdef TOUCH_THP_SUPPORT
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_THP_SUPPORT
 static void syna_set_fod_downup(struct syna_tcm *tcm_hcd, int enable)
 {
 	LOGI("enable:%d\n", enable);
@@ -1278,7 +1278,7 @@ static void syna_tcm_switch_mode(u8 gesture_type)
 	int retval, i = 0, retry = 3;
 
 	LOGI("enter\n");
-#ifdef CONFIG_TRUSTED_TOUCH
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_TRUSTED_TOUCH
 	if (xiaomi_driver_data.tui_process) {
 		if (wait_for_completion_interruptible(&xiaomi_driver_data.tui_finish)) {
 			LOGE("cautious, ERESTARTSYS may cause cmd loss recomand try again\n");
@@ -1396,7 +1396,7 @@ static void syna_tcm_set_charge_state(int state)
 		LOGI("in suspend mode,don't need to set charge state\n");
 		return;
 	}
-#ifdef CONFIG_TRUSTED_TOUCH
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_TRUSTED_TOUCH
 	if (xiaomi_driver_data.tui_process) {
 		if (wait_for_completion_interruptible(&xiaomi_driver_data.tui_finish)) {
 			LOGE("cautious, ERESTARTSYS may cause cmd loss recomand try again\n");
@@ -1431,7 +1431,7 @@ static void syna_tcm_set_cur_value(int mode, int *value)
 		LOGE("error value [%d]\n", value[0]);
 		return;
 	}
-#ifdef CONFIG_TRUSTED_TOUCH
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_TRUSTED_TOUCH
 	if (xiaomi_driver_data.tui_process) {
 		if (wait_for_completion_interruptible(&xiaomi_driver_data.tui_finish)) {
 			LOGE("cautious, ERESTARTSYS may cause cmd loss recomand try again");
@@ -1444,7 +1444,7 @@ static void syna_tcm_set_cur_value(int mode, int *value)
 		LOGI("mode:%d,value:%d\n", mode, value[0]);
 	else
 		LOGD("mode:%d,value:%d\n", mode, value[0]);
-#ifdef TOUCH_THP_SUPPORT
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_THP_SUPPORT
 	if (mode == DATA_MODE_44) {
 		syna_set_ic_mode(ENTER_IDLE_MODE, value);
 		return;
@@ -1553,7 +1553,7 @@ static int syna_tcm_touch_doze_analysis(int input)
 	int result = 0;
 	struct syna_tcm *tcm_hcd = tcm;
 	struct syna_hw_attn_data *attn = &tcm->hw_if->bdata_attn;
-#ifdef TOUCH_SENSORHUB_SUPPORT
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_SENSORHUB_SUPPORT
 	struct spi_device *spi = (struct spi_device *)tcm->hw_if->pdev;
 #endif
 
@@ -1594,7 +1594,7 @@ static int syna_tcm_touch_doze_analysis(int input)
 		case TOUCH_5:
 			result = gpio_get_value(attn->irq_gpio) == 0 ? 0 : 1;
 		break;
-	#ifdef TOUCH_SENSORHUB_SUPPORT
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_SENSORHUB_SUPPORT
 		case TOUCH_10:
 			xiaomi_set_sensorhub_nonui_enable(true);
 		break;
@@ -1615,7 +1615,7 @@ static int syna_tcm_touch_doze_analysis(int input)
 			return result;
 		}
 		break;
-	#endif
+#endif
 		default:
 			LOGE("Don't support touch doze analysis\n");
 		break;
@@ -1731,7 +1731,7 @@ void syna_xiaomi_touch_probe(struct syna_tcm *syna_tcm)
 {
 	int retry_get_lockdown_info = 5;
 	struct spi_device *spi = NULL;
-#ifdef CONFIG_TRUSTED_TOUCH
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_TRUSTED_TOUCH
 	struct device_node *node = NULL;
 #endif
 
@@ -1740,7 +1740,7 @@ void syna_xiaomi_touch_probe(struct syna_tcm *syna_tcm)
 		return;
 	tcm = syna_tcm;
 	spi = tcm->hw_if->pdev;
-#ifdef CONFIG_TRUSTED_TOUCH
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_TRUSTED_TOUCH
 	node = spi->dev.of_node;
 #endif
 	/* get lockdown info */
@@ -1796,13 +1796,13 @@ void syna_xiaomi_touch_probe(struct syna_tcm *syna_tcm)
 	hardware_operation.get_touch_ic_buffer = NULL;
 	hardware_operation.touch_doze_analysis = syna_tcm_touch_doze_analysis;
 	hardware_operation.touch_log_level_control = syna_tcm_touch_log_level_control;
-#ifdef TOUCH_THP_SUPPORT
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_THP_SUPPORT
 	hardware_operation.enable_touch_raw = syna_tcm_enable_touch_raw;
 #ifdef TOUCH_THP_DEBUG
 	hardware_operation.htc_ic_setModeValue = syna_htc_ic_setModeValue;
 	hardware_operation.htc_ic_getModeValue = syna_htc_ic_getModeValue;
 #endif
-#ifdef TOUCH_FOD_SUPPORT
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_FOD_SUPPORT
 	hardware_operation.xiaomi_touch_fod_test = syna_xiaomi_touch_fod_test;
 #endif
 	hardware_operation.ic_switch_mode = syna_tcm_switch_mode;
@@ -1818,7 +1818,7 @@ void syna_xiaomi_touch_probe(struct syna_tcm *syna_tcm)
 		PANEL_EVENT_NOTIFICATION_PRIMARY, PANEL_EVENT_NOTIFIER_CLIENT_PRIMARY_TOUCH);
 #endif
 	syna_tcm_enable_touch_raw(0);
-#ifdef CONFIG_TRUSTED_TOUCH
+#ifdef CONFIG_TOUCHSCREEN_SYNA_TCM2_TRUSTED_TOUCH
 	if (of_property_read_bool(node, "syna,qts_en")) {
 		syna_tcm_fill_qts_vendor_data(&qts_vendor_data, tcm);
 		if (qts_client_register(qts_vendor_data))
