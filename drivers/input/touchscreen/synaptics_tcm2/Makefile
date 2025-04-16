@@ -13,3 +13,4 @@ synaptics_tcm2-m += syna_tcm2_platform_spi.o
 synaptics_tcm2-m += syna_tcm2_sysfs.o
 synaptics_tcm2-m += syna_tcm2_testing.o
 synaptics_tcm2-m += syna_xiaomi_driver.o
+synaptics_tcm2-$(CONFIG_TOUCHSCREEN_TOUCHSCREEN_SYNA_TCM2_TRUSTED_TOUCH) += qts/qts_core.o
