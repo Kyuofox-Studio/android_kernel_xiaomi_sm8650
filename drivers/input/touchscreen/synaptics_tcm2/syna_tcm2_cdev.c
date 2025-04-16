@@ -39,8 +39,8 @@
 
 #include "syna_tcm2.h"
 #include "syna_tcm2_cdev.h"
-#include "synaptics_touchcom_core_dev.h"
-#include "synaptics_touchcom_func_base.h"
+#include "tcm/synaptics_touchcom_core_dev.h"
+#include "tcm/synaptics_touchcom_func_base.h"
 
 #if (KERNEL_VERSION(5, 9, 0) <= LINUX_VERSION_CODE) || \
 	defined(HAVE_UNLOCKED_IOCTL)
