@@ -1154,21 +1154,10 @@ static void syna_set_report_rate(int value)
 	}
 }
 
-#ifdef CONFIG_TOUCH_FACTORY_BUILD
-static void thp_send_cmd_to_hal(s8 touch_id , int cmd, int value)
-{
-    add_common_data_to_buf(touch_id, SET_CUR_VALUE, cmd, 1, &value);
-}
-#endif
-
 static void syna_tmd_signal_work(struct work_struct *work)
 {
 	int retval = 0;
 
-#ifdef CONFIG_TOUCH_FACTORY_BUILD
-	LOGI("notify hal to enable fod!\n");
-	thp_send_cmd_to_hal(0, DATA_MODE_10, 1);
-#endif
 	if (ATOMIC_GET(tcm->tcm_dev->firmware_flashing)) {
 		LOGI("Touch is do fw updating\n");
 		retval = wait_for_completion_timeout(&tcm->tcm_dev->fw_update_completion, msecs_to_jiffies(6000));
@@ -1289,10 +1278,6 @@ static void syna_tcm_switch_mode(u8 gesture_type)
 	int retval, i = 0, retry = 3;
 
 	LOGI("enter\n");
-#ifdef CONFIG_TOUCH_FACTORY_BUILD
-	LOGI("factory version,skip set gesture mode\n");
-	return;
-#endif
 #ifdef CONFIG_TRUSTED_TOUCH
 	if (xiaomi_driver_data.tui_process) {
 		if (wait_for_completion_interruptible(&xiaomi_driver_data.tui_finish)) {

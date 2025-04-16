@@ -2786,9 +2786,6 @@ static int syna_testing_self_test(char *buf, char *save_buf, unsigned int *lengt
 	u64 mask_base = 1;
 	u64 mask;
 	struct syna_tcm *tcm = g_tcm_ptr;
-#ifdef CONFIG_TOUCH_FACTORY_BUILD
-	int i;
-#endif
 
 	/*
 	description for mask:
@@ -2923,16 +2920,6 @@ static int syna_testing_self_test(char *buf, char *save_buf, unsigned int *lengt
 	result_flag |= (testing_hcd->result) ? (1<< 0x19 ) : 0;
 	offset = testing_save_output(save_buf, offset, NULL);
 
-#ifdef CONFIG_TOUCH_FACTORY_BUILD
-	/* PT86 Test will run only in factory build */
-	for (i = 0; i < 3; ++i) {
-		retval = syna_testing_pt86(tcm, i);
-		if (retval < 0) {
-			LOGE("test pt86 failed, casenum = %d\n", i);
-			goto exit;
-		}
-	}
-#endif
 	/* PT86 save result */
 	testing_copy_rawshift_diff_to_output(TEST_PID86_RAWSHIFTTEST);
 	/* TEST_PID86_RAWSHIFTTEST 0x56 out of range, use 0x1a for mask */

@@ -105,9 +105,7 @@ static unsigned char custom_touch_format[] = {
  *           otherwise, there is no power supplied when system
  *           is going to suspend stage.
  */
-#ifndef CONFIG_TOUCH_FACTORY_BUILD
 #define POWER_ALIVE_AT_SUSPEND
-#endif
 
 /**
  * @section: global variables for an active drm panel
@@ -1279,25 +1277,6 @@ static int syna_dev_resume(struct device *dev)
 		return 0;
 
 	LOGI("Prepare to resume device\n");
-#ifdef CONFIG_TOUCH_FACTORY_BUILD
-	if (pct->pinctrl) {
-		retval =
-		    pinctrl_select_state(pct->pinctrl,
-					 pct->pinctrl_state_active);
-		if (retval < 0)
-			LOGE("Failed to select %s pinstate %d\n", PINCTRL_STATE_ACTIVE, retval);
-	} else
-		LOGE("Failed to init pinctrl\n");
-		/* power on */
-	if (hw_if->ops_power_on) {
-		retval = hw_if->ops_power_on(hw_if, true);
-		if (retval < 0) {
-			LOGE("power on in resume failed\n");
-			return -ENODEV;
-		}
-	}
-	tcm->fod_finger = false;
-#endif
 	/* for screen freezing test */
 	if (tcm->doze_test == true) {
 		LOGI("touch doze resume in\n");
@@ -1445,9 +1424,6 @@ static int syna_dev_suspend(struct device *dev)
 	 */
 	irq_disabled = (!xiaomi_get_gesture_type(TOUCH_ID));
 
-#ifdef CONFIG_TOUCH_FACTORY_BUILD
-	irq_disabled = true;
-#endif
 	/* disable irq */
 	if (irq_disabled && (hw_if->ops_enable_irq)) {
 		hw_if->ops_enable_irq(hw_if, false);
@@ -1457,24 +1433,6 @@ static int syna_dev_suspend(struct device *dev)
 		}
 	}
 
-#ifdef CONFIG_TOUCH_FACTORY_BUILD
-	if (pct->pinctrl) {
-		retval =
-			pinctrl_select_state(pct->pinctrl,
-					 pct->pinctrl_state_suspend);
-		if (retval < 0)
-			LOGE("Failed to select %s pinstate %d\n", PINCTRL_STATE_SUSPEND, retval);
-	} else
-		LOGE("Failed to init pinctrl\n");
-	/* power off */
-	if (hw_if->ops_power_on) {
-		retval = hw_if->ops_power_on(hw_if, false);
-		if (retval < 0) {
-			LOGE("power off in suspend failed\n");
-			return -ENODEV;
-		}
-	}
-#endif
 	/* for screen freezing test */
 	if (tcm->doze_test == true) {
 		if (pct->pinctrl) {
