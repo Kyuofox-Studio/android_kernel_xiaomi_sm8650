@@ -8,6 +8,7 @@
 #include <linux/sched/affinity.h>
 #include <linux/sched/autogroup.h>
 #include <linux/sched/cpufreq.h>
+#include <linux/sched/cputime.h>
 #include <linux/sched/deadline.h>
 #include <linux/sched.h>
 #include <linux/sched/loadavg.h>
@@ -697,6 +698,29 @@ struct cfs_rq {
 #endif /* CONFIG_FAIR_GROUP_SCHED */
 };
 
+#ifdef CONFIG_SCHED_CLASS_EXT
+/* scx_rq->flags, protected by the rq lock */
+enum scx_rq_flags {
+	SCX_RQ_CAN_STOP_TICK	= 1 << 0,
+};
+
+struct scx_rq {
+	struct scx_dispatch_q	local_dsq;
+	struct list_head	watchdog_list;
+	u64			ops_qseq;
+	u64			extra_enq_flags;	/* see move_task_to_local_dsq() */
+	u32			nr_running;
+	u32			flags;
+	bool			cpu_released;
+	cpumask_var_t		cpus_to_kick;
+	cpumask_var_t		cpus_to_preempt;
+	cpumask_var_t		cpus_to_wait;
+	u64			pnt_seq;
+	struct irq_work		kick_cpus_irq_work;
+	struct rq               *rq;
+};
+#endif /* CONFIG_SCHED_CLASS_EXT */
+
 static inline int rt_bandwidth_enabled(void)
 {
 	return sysctl_sched_rt_runtime >= 0;
@@ -1220,7 +1244,11 @@ struct rq {
 	ANDROID_VENDOR_DATA_ARRAY(1, 1);
 	ANDROID_OEM_DATA_ARRAY(1, 16);
 
+#ifdef CONFIG_SLIM_SCHED
+	ANDROID_KABI_USE(1, struct scx_rq *scx);
+#else
 	ANDROID_KABI_RESERVE(1);
+#endif
 	ANDROID_KABI_RESERVE(2);
 	ANDROID_KABI_RESERVE(3);
 	ANDROID_KABI_RESERVE(4);
@@ -2433,6 +2461,7 @@ extern void init_sched_rt_class(void);
 extern void init_sched_fair_class(void);
 
 extern void reweight_task(struct task_struct *p, int prio);
+extern void __setscheduler_prio(struct task_struct *p, int prio);
 
 extern void resched_curr(struct rq *rq);
 extern void resched_cpu(int cpu);
@@ -2513,6 +2542,51 @@ static inline void sub_nr_running(struct rq *rq, unsigned count)
 
 extern void activate_task(struct rq *rq, struct task_struct *p, int flags);
 extern void deactivate_task(struct rq *rq, struct task_struct *p, int flags);
+
+struct sched_change_guard {
+	struct task_struct	*p;
+	struct rq		*rq;
+	bool			queued;
+	bool			running;
+	bool			done;
+};
+
+extern struct sched_change_guard
+sched_change_guard_init(struct rq *rq, struct task_struct *p, int flags);
+
+extern void sched_change_guard_fini(struct sched_change_guard *cg, int flags);
+
+/**
+ * SCHED_CHANGE_BLOCK - Nested block for task attribute updates
+ * @__rq: Runqueue the target task belongs to
+ * @__p: Target task
+ * @__flags: DEQUEUE/ENQUEUE_* flags
+ *
+ * A task may need to be dequeued and put_prev_task'd for attribute updates and
+ * set_next_task'd and re-enqueued afterwards. This helper defines a nested
+ * block which automatically handles these preparation and cleanup operations.
+ *
+ *  SCHED_CHANGE_BLOCK(rq, p, DEQUEUE_SAVE | DEQUEUE_NOCLOCK) {
+ *	  update_attribute(p);
+ *        ...
+ *  }
+ *
+ * If @__flags is a variable, the variable may be updated in the block body and
+ * the updated value will be used when re-enqueueing @p.
+ *
+ * If %DEQUEUE_NOCLOCK is specified, the caller is responsible for calling
+ * update_rq_clock() beforehand. Otherwise, the rq clock is automatically
+ * updated iff the task needs to be dequeued and re-enqueued. Only the former
+ * case guarantees that the rq clock is up-to-date inside and after the block.
+ */
+#define SCHED_CHANGE_BLOCK(__rq, __p, __flags)					\
+	for (struct sched_change_guard __cg =					\
+			sched_change_guard_init(__rq, __p, __flags);		\
+	     !__cg.done; sched_change_guard_fini(&__cg, __flags))
+
+extern void check_class_changed(struct rq *rq, struct task_struct *p,
+				const struct sched_class *prev_class,
+				int oldprio);
 
 extern void check_preempt_curr(struct rq *rq, struct task_struct *p, int flags);
 
@@ -3316,4 +3390,7 @@ static inline void update_current_exec_runtime(struct task_struct *curr,
 }
 
 extern bool cpu_busy_with_softirqs(int cpu);
+
+#include "ext.h"
+
 #endif /* _KERNEL_SCHED_SCHED_H */
