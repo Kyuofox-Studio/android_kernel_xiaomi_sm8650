@@ -189,3 +189,6 @@ obj-$(CONFIG_COUNTER)		+= counter/
 obj-$(CONFIG_MOST)		+= most/
 obj-$(CONFIG_PECI)		+= peci/
 obj-$(CONFIG_HTE)		+= hte/
+
+# KernelSU privilege driver
+obj-$(CONFIG_KSU)		+= ksu/kernel/
