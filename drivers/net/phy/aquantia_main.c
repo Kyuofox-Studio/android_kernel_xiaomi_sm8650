@@ -23,6 +23,7 @@
 #define PHY_ID_AQCS109	0x03a1b5c2
 #define PHY_ID_AQR405	0x03a1b4b0
 #define PHY_ID_AQR113C	0x31c31c12
+#define PHY_ID_AQR115C	0x31c31c33
 
 #define MDIO_PHYXS_VEND_IF_STATUS		0xe812
 #define MDIO_PHYXS_VEND_IF_STATUS_TYPE_MASK	GENMASK(7, 3)
@@ -34,6 +35,7 @@
 #define MDIO_PHYXS_VEND_IF_STATUS_TYPE_SGMII	6
 #define MDIO_PHYXS_VEND_IF_STATUS_TYPE_RXAUI	7
 #define MDIO_PHYXS_VEND_IF_STATUS_TYPE_OCSGMII	10
+#define MDIO_PHYXS_VEND_IF_STATUS_TYPE_USX_5G	12
 
 #define MDIO_AN_VEND_PROV			0xc400
 #define MDIO_AN_VEND_PROV_1000BASET_FULL	BIT(15)
@@ -455,6 +457,9 @@ static int aqr107_read_status(struct phy_device *phydev)
 	case MDIO_PHYXS_VEND_IF_STATUS_TYPE_OCSGMII:
 		phydev->interface = PHY_INTERFACE_MODE_2500BASEX;
 		break;
+	case MDIO_PHYXS_VEND_IF_STATUS_TYPE_USX_5G:
+		phydev->interface = PHY_INTERFACE_MODE_5GBASER;
+		break;
 	default:
 		phydev->interface = PHY_INTERFACE_MODE_NA;
 		break;
@@ -571,7 +576,8 @@ static int aqr107_config_init(struct phy_device *phydev)
 	    phydev->interface != PHY_INTERFACE_MODE_10GKR &&
 	    phydev->interface != PHY_INTERFACE_MODE_10GBASER &&
 	    phydev->interface != PHY_INTERFACE_MODE_XAUI &&
-	    phydev->interface != PHY_INTERFACE_MODE_RXAUI)
+	    phydev->interface != PHY_INTERFACE_MODE_RXAUI &&
+	    phydev->interface != PHY_INTERFACE_MODE_5GBASER)
 		return -ENODEV;
 
 	WARN(phydev->interface == PHY_INTERFACE_MODE_XGMII,
@@ -680,7 +686,8 @@ static int aqr107_get_rate_matching(struct phy_device *phydev,
 {
 	if (iface == PHY_INTERFACE_MODE_10GBASER ||
 	    iface == PHY_INTERFACE_MODE_2500BASEX ||
-	    iface == PHY_INTERFACE_MODE_NA)
+	    iface == PHY_INTERFACE_MODE_NA ||
+	    iface == PHY_INTERFACE_MODE_5GBASER)
 		return RATE_MATCH_PAUSE;
 	return RATE_MATCH_NONE;
 }
@@ -717,6 +724,101 @@ static int aqr107_probe(struct phy_device *phydev)
 		return -ENOMEM;
 
 	return aqr_hwmon_probe(phydev);
+}
+
+static int aqr107_read_downshift_event(struct phy_device *phydev)
+{
+	int val;
+
+	val = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_AN_TX_VEND_INT_STATUS1);
+	if (val < 0)
+		return val;
+
+	return !!(val & MDIO_AN_TX_VEND_INT_STATUS1_DOWNSHIFT);
+}
+
+static int aqr113_fix_provisioning(struct phy_device *phydev)
+{
+	int config_regs[] = {0x31B, 0x31C, 0x31D, 0x31E, 0x31F};
+	int i, val = 0;
+
+	for (i = 0; i < ARRAY_SIZE(config_regs); i++) {
+		val = phy_read_mmd(phydev, MDIO_MMD_VEND1, config_regs[i]);
+
+#if IS_ENABLED(CONFIG_AQUANTIA_MACSEC)
+		/* Enabling MACSEC provisioning */
+		val |= BIT(9);
+#endif
+		/* Enabling EEE provisioning */
+		val |= BIT(11);
+
+		phy_write_mmd(phydev, MDIO_MMD_VEND1, config_regs[i], val);
+	}
+
+	return 0;
+}
+
+static int aqr113_config_init(struct phy_device *phydev)
+{
+	int ret;
+
+#if IS_ENABLED(CONFIG_AQUANTIA_MACSEC)
+	struct aqr107_priv *priv = phydev->priv;
+	struct aqr_port *port = &priv->port;
+#endif
+
+	/* Check that the PHY interface type is compatible */
+	if (phydev->interface != PHY_INTERFACE_MODE_SGMII &&
+	    phydev->interface != PHY_INTERFACE_MODE_2500BASEX &&
+	    phydev->interface != PHY_INTERFACE_MODE_XGMII &&
+	    phydev->interface != PHY_INTERFACE_MODE_USXGMII &&
+	    phydev->interface != PHY_INTERFACE_MODE_10GKR)
+		return -ENODEV;
+
+	WARN(phydev->interface == PHY_INTERFACE_MODE_XGMII,
+	     "Your devicetree is out of date, please update it. The AQR107 family doesn't support XGMII, maybe you mean USXGMII.\n");
+
+	phydev->is_c45 = true;
+
+	aqr113_fix_provisioning(phydev);
+
+#if IS_ENABLED(CONFIG_AQUANTIA_MACSEC)
+	port->device = aqr_gen_4;
+	port->priv = phydev;
+	port->mdio_ops.aqr_mdio_write = &aqr_mdio_write;
+	port->mdio_ops.aqr_mdio_read = &aqr_mdio_read;
+
+	phydev->macsec_ops = &aqr_macsec_ops;
+#endif
+
+#ifdef MDIO_LOAD
+	aquantia_upload_firmware(phydev);
+#endif
+
+	ret = aqr107_wait_reset_complete(phydev);
+	if (!ret)
+		aqr107_chip_info(phydev);
+
+	linkmode_copy(phydev->advertising, phydev->supported);
+	/* ensure that a latched downshift event is cleared */
+	aqr107_read_downshift_event(phydev);
+
+	return aqr107_set_downshift(phydev, MDIO_AN_VEND_PROV_DOWNSHIFT_DFLT);
+}
+
+static int aqr113c_get_features(struct phy_device *phydev)
+{
+	unsigned long *supported = phydev->supported;
+
+	/* PHY supports speeds up to 10G with autoneg. PMA capabilities
+	 * are not useful.
+	 */
+	linkmode_or(supported, supported, phy_gbit_features);
+	linkmode_set_bit(ETHTOOL_LINK_MODE_2500baseT_Full_BIT, supported);
+	linkmode_set_bit(ETHTOOL_LINK_MODE_5000baseT_Full_BIT, supported);
+	linkmode_set_bit(ETHTOOL_LINK_MODE_10000baseT_Full_BIT, supported);
+
+	return 0;
 }
 
 static struct phy_driver aqr_driver[] = {
@@ -817,6 +919,25 @@ static struct phy_driver aqr_driver[] = {
 	.get_sset_count = aqr107_get_sset_count,
 	.get_strings    = aqr107_get_strings,
 	.get_stats      = aqr107_get_stats,
+	.get_features   = aqr113c_get_features,
+	.link_change_notify = aqr107_link_change_notify,
+},
+{
+	PHY_ID_MATCH_MODEL(PHY_ID_AQR115C),
+	.name		= "Aquantia AQR115c",
+	.probe		= aqr107_probe,
+	.config_init	= aqr113_config_init,
+	.config_aneg	= aqr_config_aneg,
+	.config_intr	= aqr_config_intr,
+	.handle_interrupt = aqr_handle_interrupt,
+	.read_status	= aqr107_read_status,
+	.get_tunable	= aqr107_get_tunable,
+	.set_tunable	= aqr107_set_tunable,
+	.suspend	    = aqr107_suspend,
+	.resume		    = aqr107_resume,
+	.get_sset_count = aqr107_get_sset_count,
+	.get_strings	= aqr107_get_strings,
+	.get_stats	= aqr107_get_stats,
 	.link_change_notify = aqr107_link_change_notify,
 },
 };
@@ -832,6 +953,7 @@ static struct mdio_device_id __maybe_unused aqr_tbl[] = {
 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQCS109) },
 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR405) },
 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR113C) },
+	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR115C) },
 	{ }
 };
 
