@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (C) 2018-2020 Oplus. All rights reserved.
+
+menu "OPLUS System Kernel for Qualcomm platforms"
+	depends on ARCH_QCOM
+
+config OPLUS_SYSTEM_KERNEL_QCOM
+	bool "Enable OPLUS System Kernel features for Qualcomm"
+	default y
+	help
+	  Master switch for all OPLUS kernel-level features on Qualcomm
+	  platforms. Disable this to turn off every OPLUS enhancement.
+
+if OPLUS_SYSTEM_KERNEL_QCOM
+
+config OPLUS_FEATURE_GAME_OPT
+	tristate "Game Optimization"
+	depends on OPLUS_FEATURE_GEAS
+	help
+	  This module provides game-performance related optimizations
+	  including cpu_load, cpufreq limits, dsu freq scaling,
+	  early_detect, fake cpufreq, rt_info, task util, yield opt,
+	  frame_load, frame_sync, task boost, critical task boost, etc.
+
+	  Say M here to build as an external module.
+
+config OPLUS_FEATURE_GEAS
+	tristate "GEAS (GPU Energy Aware Scheduling)"
+	help
+	  GEAS (GPU Energy Aware Scheduling) module for OPLUS FEATURE.
+	  Provides bandwidth monitor and system control interfaces.
+
+	  Say M here to build as an external module.
+
+config OPLUS_FEATURE_SCHED_EXT
+	tristate "Sched-Ext Framework"
+	help
+	  OPLUS FEATURE extension for the kernel scheduler.
+	  Includes main.c and associated headers.
+
+	  Say M here to build as an external module.
+
+endif # OPLUS_SYSTEM_KERNEL_QCOM
+
+endmenu

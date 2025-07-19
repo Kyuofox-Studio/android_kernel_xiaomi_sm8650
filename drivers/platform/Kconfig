@@ -20,3 +20,5 @@ source "drivers/platform/x86/Kconfig"
 source "drivers/platform/msm/Kconfig"
 
 source "drivers/platform/xiaomi/Kconfig"
+
+source "drivers/platform/oplus/Kconfig"
